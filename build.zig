@@ -18,18 +18,23 @@ pub fn build(b: *std.Build) void {
         else => "unknown",
     };
 
+    const lib_name = b.fmt("exhelper_{s}_{s}", .{ platform_name, arch_name });
+
     // Build shared library
     const lib = b.addLibrary(.{
-        .name = b.fmt("exhelper_{s}_{s}", .{ platform_name, arch_name }),
+        .name = lib_name,
         .linkage = .dynamic,
         .root_module = b.createModule(.{
             .target = target,
             .optimize = optimize,
             .pic = true,
+            .omit_frame_pointer = false,
+            .unwind_tables = .sync,
         }),
     });
     lib.bundle_ubsan_rt = false;
     lib.bundle_compiler_rt = false;
+    lib.link_gc_sections = true;
 
     lib.addCSourceFile(.{
         .file = b.path("src/main.c"),
@@ -37,6 +42,7 @@ pub fn build(b: *std.Build) void {
     });
     lib.addAssemblyFile(b.path("src/main.S"));
     lib.addIncludePath(b.path("src/include"));
+    lib.linkLibCpp();
     b.installArtifact(lib);
 
     // Test executable
@@ -58,7 +64,7 @@ pub fn build(b: *std.Build) void {
 
     // Link library by path instead of linkLibrary to avoid dependency graph issues
     exe.addLibraryPath(b.path("zig-out/lib"));
-    exe.linkSystemLibrary(b.fmt("exhelper_{s}_{s}", .{ platform_name, arch_name }));
+    exe.linkSystemLibrary(lib_name);
     exe.step.dependOn(&lib.step);
 
     // Run step
