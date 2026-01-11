@@ -1,0 +1,138 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: Linux x86_64
+            platform: linux/amd64
+          - os: ubuntu-24.04
+            name: Linux arm64
+            platform: linux/arm64
+          - os: macos-latest
+            name: macOS x86_64
+            rosetta: true
+          - os: macos-latest
+            name: macOS arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: matrix.platform == 'linux/arm64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: matrix.platform
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and test (Docker)
+        if: matrix.platform
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: exhelper-test
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      - name: Run tests (Docker)
+        if: matrix.platform
+        run: docker run --rm exhelper-test
+
+      - name: Build and test (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          if [ "${{ matrix.rosetta }}" = "true" ]; then
+            arch -x86_64 bash -c 'MODE=release TEST=1 ./build.sh'
+          else
+            MODE=release TEST=1 ./build.sh
+          fi
+
+  build:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: x86_64
+            docker_platform: linux/amd64
+            platform: linux
+            ext: so
+          - os: ubuntu-22.04
+            arch: arm64
+            docker_platform: linux/arm64
+            platform: linux
+            ext: so
+          - os: macos-latest
+            arch: x86_64
+            platform: macos
+            ext: dylib
+          - os: macos-latest
+            arch: arm64
+            platform: macos
+            ext: dylib
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: matrix.docker_platform == 'linux/arm64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: matrix.docker_platform
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        if: matrix.docker_platform
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.docker_platform }}
+          load: true
+          tags: exhelper-build
+          cache-from: type=gha,scope=${{ matrix.docker_platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.docker_platform }}
+
+      - name: Build library (Docker)
+        if: matrix.docker_platform
+        run: docker run --rm -v ${{ github.workspace }}/build:/build/build exhelper-build bash -c "MODE=release ./build.sh"
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: MODE=release ARCH=${{ matrix.arch }} ./build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libexhelper_${{ matrix.platform }}_${{ matrix.arch }}
+          path: build/release/bin/libexhelper_${{ matrix.platform }}_${{ matrix.arch }}.${{ matrix.ext }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: artifacts/**/*
