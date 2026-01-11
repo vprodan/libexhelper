@@ -74,18 +74,18 @@ echo "Building for $TARGET ($MODE)..."
 
 # Build shared library
 echo "Compiling library..."
-$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -fvisibility=hidden -Isrc/include -c src/main.c -o ${BUILD_DIR}/obj/main.c.o
-$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -Isrc/include -c src/main.S -o ${BUILD_DIR}/obj/main.S.o
-$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer $SHARED_FLAGS ${STRIP_FLAGS:-} -o ${BUILD_DIR}/bin/$LIB_NAME ${BUILD_DIR}/obj/main.c.o ${BUILD_DIR}/obj/main.S.o $LDFLAGS
+$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables -fvisibility=hidden -Isrc/include -c src/main.c -o ${BUILD_DIR}/obj/main.c.o
+$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables -Isrc/include -c src/main.S -o ${BUILD_DIR}/obj/main.S.o
+$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables $SHARED_FLAGS ${STRIP_FLAGS:-} -o ${BUILD_DIR}/bin/$LIB_NAME ${BUILD_DIR}/obj/main.c.o ${BUILD_DIR}/obj/main.S.o $LDFLAGS
 
 echo "Shared library built: ${BUILD_DIR}/bin/$LIB_NAME"
 
 # Build test executable
 if [ "$TEST" = "1" ]; then
     echo "Compiling test..."
-    $CXX $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer -fexceptions -std=c++17 -Isrc/include -c src/test.cpp -o ${BUILD_DIR}/obj/test.cpp.o
-    $CC  $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer -Isrc/include -c src/test.S -o ${BUILD_DIR}/obj/test.S.o
-    $CXX $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer ${STRIP_FLAGS:-} -o ${BUILD_DIR}/bin/$TEST_NAME ${BUILD_DIR}/obj/test.cpp.o ${BUILD_DIR}/obj/test.S.o -L${BUILD_DIR}/bin -lexhelper_${PLATFORM}_${ARCH} $RPATH_FLAG $LDFLAGS
+    $CXX $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer -funwind-tables -fexceptions -std=c++17 -Isrc/include -c src/test.cpp -o ${BUILD_DIR}/obj/test.cpp.o
+    $CC  $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer -funwind-tables -Isrc/include -c src/test.S -o ${BUILD_DIR}/obj/test.S.o
+    $CXX $OPT_FLAGS $TARGET_FLAG -fno-omit-frame-pointer -funwind-tables ${STRIP_FLAGS:-} -o ${BUILD_DIR}/bin/$TEST_NAME ${BUILD_DIR}/obj/test.cpp.o ${BUILD_DIR}/obj/test.S.o -L${BUILD_DIR}/bin -lexhelper_${PLATFORM}_${ARCH} $RPATH_FLAG $LDFLAGS
 
     echo "Test binary built: ${BUILD_DIR}/bin/$TEST_NAME"
 

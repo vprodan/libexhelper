@@ -119,8 +119,8 @@
 
 .macro ARGS_SAVE
 #ifdef ARCH_X86_64
-    sub     IMM(72), %rsp
-    .cfi_adjust_cfa_offset 72
+    sub     IMM(80), %rsp
+    .cfi_adjust_cfa_offset 80
     
     mov     %rcx, 0(%rsp)
     .cfi_rel_offset %rcx, 0
@@ -140,25 +140,22 @@
     .cfi_rel_offset %r11, 56
     mov     REG_EH_TARGET, 64(%rsp)
     .cfi_rel_offset REG_EH_TARGET, 64
+    // 72(%rsp) is padding for 16-byte alignment
 #else
     sub     sp, sp, #80
     .cfi_adjust_cfa_offset 80
 
-    str     x0, [sp, #0]
+    stp     x0, x1, [sp, #0]
     .cfi_rel_offset x0, 0
-    str     x1, [sp, #8]
     .cfi_rel_offset x1, 8
-    str     x2, [sp, #16]
+    stp     x2, x3, [sp, #16]
     .cfi_rel_offset x2, 16
-    str     x3, [sp, #24]
     .cfi_rel_offset x3, 24
-    str     x4, [sp, #32]
+    stp     x4, x5, [sp, #32]
     .cfi_rel_offset x4, 32
-    str     x5, [sp, #40]
     .cfi_rel_offset x5, 40
-    str     x6, [sp, #48]
+    stp     x6, x7, [sp, #48]
     .cfi_rel_offset x6, 48
-    str     x7, [sp, #56]
     .cfi_rel_offset x7, 56
     str     REG_EH_TARGET, [sp, #64]
     .cfi_rel_offset REG_EH_TARGET, 64
@@ -186,24 +183,20 @@
     mov    64(%rsp), REG_EH_TARGET
     .cfi_restore REG_EH_TARGET
 
-    add    IMM(72), %rsp
-    .cfi_adjust_cfa_offset -72
+    add    IMM(80), %rsp
+    .cfi_adjust_cfa_offset -80
 #else
-    ldr     x0, [sp, #0]
+    ldp     x0, x1, [sp, #0]
     .cfi_restore x0
-    ldr     x1, [sp, #8]
     .cfi_restore x1
-    ldr     x2, [sp, #16]
+    ldp     x2, x3, [sp, #16]
     .cfi_restore x2
-    ldr     x3, [sp, #24]
     .cfi_restore x3
-    ldr     x4, [sp, #32]
+    ldp     x4, x5, [sp, #32]
     .cfi_restore x4
-    ldr     x5, [sp, #40]
     .cfi_restore x5
-    ldr     x6, [sp, #48]
+    ldp     x6, x7, [sp, #48]
     .cfi_restore x6
-    ldr     x7, [sp, #56]
     .cfi_restore x7
     ldr     REG_EH_TARGET, [sp, #64]
     .cfi_restore REG_EH_TARGET

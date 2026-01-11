@@ -2,7 +2,6 @@
 
 .cfi_sections .eh_frame
 
-.global SYMBOL(eh_get_exception_ptr)
 .global SYMBOL(eh_managed_to_native)
 .global SYMBOL(eh_native_to_managed)
 
@@ -15,16 +14,6 @@ LSDA_SECTION
 .text
 .Lpersonality:
     JUMP_LABEL SYMBOL(personality)
-
-SYMBOL(eh_get_exception_ptr):
-.cfi_startproc
-.cfi_personality PERSONALITY_ENC, .Lpersonality
-.cfi_lsda LSDA_ENC, .LSDA_none
-    FRAME_PROLOG
-    CALL_LABEL SYMBOL(get_exception_ptr)
-    FRAME_EPILOG
-    ret
-.cfi_endproc
 
 SYMBOL(eh_managed_to_native):
 .cfi_startproc
