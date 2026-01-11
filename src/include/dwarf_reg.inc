@@ -1,7 +1,9 @@
 #ifndef __DWARF_REG_INC__
 #define __DWARF_REG_INC__
 
-#if defined(__x86_64__)
+#include "platform.inc"
+
+#ifdef ARCH_X86_64
 // DWARF Register Numbers for x86_64 (System V ABI)
     #define DW_REG_rax    0
     #define DW_REG_rdx    1
@@ -23,7 +25,7 @@
 
     #define DW_REG_EXC      DW_REG_r15  // Register to store exception object pointer
     #define DW_REG_EXC_ASM  %r15        // Corresponding assembly register name
-#elif defined(__aarch64__) || defined(__arm64__)
+#else // ARCH_ARM64
 // DWARF Register Numbers for AArch64
     #define DW_REG_x0     0
     #define DW_REG_x1     1
@@ -61,8 +63,6 @@
 
     #define DW_REG_EXC      DW_REG_x28  // Callee-saved register for exception object
     #define DW_REG_EXC_ASM  x28         // Corresponding assembly register name
-#else
-    #error "Unsupported architecture"
 #endif
 
 #endif

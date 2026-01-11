@@ -25,7 +25,7 @@
 #define DW_EH_PE_omit            0xFF
 
 #define LSDA_ENC DW_EH_PE_pcrel
-#if defined(__APPLE__)
+#ifdef OS_MACOS
     #define PERSONALITY_ENC DW_EH_PE_pcrel | DW_EH_PE_sdata4 | DW_EH_PE_indirect
 #else
     #define PERSONALITY_ENC DW_EH_PE_pcrel | DW_EH_PE_sdata4
