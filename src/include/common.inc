@@ -216,7 +216,7 @@
 
 .macro EXC_CLEAR
     ARGS_SAVE
-    CALL_LABEL SYMBOL(get_exception_ptr)
+    CALL_LABEL SYMBOL(eh_get_exception_ptr)
 #ifdef ARCH_X86_64
     xor     %r10, %r10
     mov     %r10, (REG_RET)
@@ -227,7 +227,7 @@
 .endm
 
 .macro EXC_GET dest:req
-    CALL_LABEL SYMBOL(get_exception_ptr)
+    CALL_LABEL SYMBOL(eh_get_exception_ptr)
 #ifdef ARCH_X86_64
     mov     (REG_RET), \dest
 #else

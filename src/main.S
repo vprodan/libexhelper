@@ -32,7 +32,7 @@ SYMBOL(eh_managed_to_native):
 .Llandingpad:
 .cfi_startproc
     ARGS_SAVE
-    CALL_LABEL SYMBOL(get_exception_ptr)
+    CALL_LABEL SYMBOL(eh_get_exception_ptr)
     EXC_SET REG_RET
     CLEAR_REG REG_RET
     ARGS_RESTORE

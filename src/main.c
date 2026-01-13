@@ -3,15 +3,10 @@
 #include "dwarf_reg.inc"
 
 #define EXPORT __attribute__((visibility("default")))
+#define HIDDEN __attribute__((visibility("hidden")))
 
 // Thread-local variable that stores the current exception pointer
-__thread void *current_exception_ptr = 0;
-
-// Returns a pointer to the current exception pointer (internal)
-void **get_exception_ptr(void)
-{
-    return &current_exception_ptr;
-}
+HIDDEN __thread void *current_exception_ptr = 0;
 
 // Public API: Returns a pointer to the current exception pointer
 EXPORT void **eh_get_exception_ptr(void)
@@ -20,7 +15,7 @@ EXPORT void **eh_get_exception_ptr(void)
 }
 
 // Personality function for exception handling
-_Unwind_Reason_Code personality(
+HIDDEN _Unwind_Reason_Code personality(
     int version,
     _Unwind_Action actions,
     _Unwind_Exception_Class exceptionClass,

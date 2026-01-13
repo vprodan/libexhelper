@@ -74,7 +74,7 @@ echo "Building for $TARGET ($MODE)..."
 
 # Build shared library
 echo "Compiling library..."
-$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables -fvisibility=hidden -Isrc/include -c src/main.c -o ${BUILD_DIR}/obj/main.c.o
+$CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables -Isrc/include -c src/main.c -o ${BUILD_DIR}/obj/main.c.o
 $CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables -Isrc/include -c src/main.S -o ${BUILD_DIR}/obj/main.S.o
 $CC $OPT_FLAGS $TARGET_FLAG -fPIC -fno-omit-frame-pointer -funwind-tables $SHARED_FLAGS ${STRIP_FLAGS:-} -o ${BUILD_DIR}/bin/$LIB_NAME ${BUILD_DIR}/obj/main.c.o ${BUILD_DIR}/obj/main.S.o $LDFLAGS
 

@@ -6,65 +6,61 @@ pub fn build(b: *std.Build) void {
 
     const os_tag = target.result.os.tag;
     const arch = target.result.cpu.arch;
-
-    const is_macos = os_tag == .macos;
-    const is_linux = os_tag == .linux;
+    const abi = target.result.abi;
 
     // Platform and arch names for output files
-    const platform_name: []const u8 = if (is_macos) "macos" else if (is_linux) "linux" else "unknown";
-    const arch_name: []const u8 = switch (arch) {
-        .x86_64 => "x86_64",
-        .aarch64 => "arm64",
-        else => "unknown",
-    };
+    const platform_name: []const u8 = if (abi != .none) b.fmt("{s}-{s}", .{ @tagName(os_tag), @tagName(abi) }) else @tagName(os_tag);
+    const arch_name: []const u8 = @tagName(arch);
 
-    const lib_name = b.fmt("exhelper_{s}_{s}", .{ platform_name, arch_name });
-
+    const name = b.fmt("exhelper_{s}_{s}", .{ platform_name, arch_name });
+    const lib_module = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .pic = true,
+        .omit_frame_pointer = false,
+        .unwind_tables = .sync,
+        .link_libcpp = true,
+    });
     // Build shared library
     const lib = b.addLibrary(.{
-        .name = lib_name,
+        .name = name,
         .linkage = .dynamic,
-        .root_module = b.createModule(.{
-            .target = target,
-            .optimize = optimize,
-            .pic = true,
-            .omit_frame_pointer = false,
-            .unwind_tables = .sync,
-        }),
+        .root_module = lib_module,
     });
     lib.bundle_ubsan_rt = false;
     lib.bundle_compiler_rt = false;
     lib.link_gc_sections = true;
+    lib.discard_local_symbols = true;
 
-    lib.addCSourceFile(.{
+    lib_module.addCSourceFile(.{
         .file = b.path("src/main.c"),
-        .flags = &.{ "-fvisibility=hidden", "-fno-sanitize=undefined" },
+        .flags = &.{"-fno-sanitize=undefined"},
     });
-    lib.addAssemblyFile(b.path("src/main.S"));
-    lib.addIncludePath(b.path("src/include"));
-    lib.linkLibCpp();
+    lib_module.addAssemblyFile(b.path("src/main.S"));
+    lib_module.addIncludePath(b.path("src/include"));
     b.installArtifact(lib);
 
     // Test executable
+    const exe_module = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libcpp = true,
+    });
     const exe = b.addExecutable(.{
-        .name = b.fmt("exhelper_test_{s}_{s}", .{ platform_name, arch_name }),
-        .root_module = b.createModule(.{
-            .target = target,
-            .optimize = optimize,
-        }),
+        .name = name,
+        .root_module = exe_module,
     });
 
-    exe.linkLibCpp();
-    exe.addCSourceFile(.{
+    exe_module.addCSourceFile(.{
         .file = b.path("src/test.cpp"),
         .flags = &.{ "-fexceptions", "-std=c++17" },
     });
-    exe.addAssemblyFile(b.path("src/test.S"));
-    exe.addIncludePath(b.path("src/include"));
+    exe_module.addAssemblyFile(b.path("src/test.S"));
+    exe_module.addIncludePath(b.path("src/include"));
 
     // Link library by path instead of linkLibrary to avoid dependency graph issues
-    exe.addLibraryPath(b.path("zig-out/lib"));
-    exe.linkSystemLibrary(lib_name);
+    exe_module.addLibraryPath(b.path("zig-out/lib"));
+    exe_module.linkSystemLibrary(name, .{});
     exe.step.dependOn(&lib.step);
 
     // Run step
