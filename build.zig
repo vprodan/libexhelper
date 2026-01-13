@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .pic = true,
         .omit_frame_pointer = false,
-        .unwind_tables = .sync,
+        .unwind_tables = .none,
         .link_libcpp = true,
     });
     // Build shared library
